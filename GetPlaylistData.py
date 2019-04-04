@@ -15,7 +15,7 @@ def check_playlist_for_track(track, playlist, sheet, row, col):
 def record_data_on_sheet(main_playlist, other_playlists, sheet):
     for row, og_track_data in enumerate(main_playlist['songs']):  # for every track
         for col, playlist in enumerate(other_playlists):  # for every playlist in other playlists
-            check_playlist_for_track(og_track_data['track'], playlist, sheet, row+2, col+2)
+            check_playlist_for_track(og_track_data['track'], playlist, sheet, row+2, col+3)
 
 
 def create_sub_playlist_list(playlist):
@@ -86,13 +86,25 @@ def get_data():
 
     # creates the header row
     sheet.cell(1, 1).value = main_playlist['name']
+    sheet.cell(1, 2).value = "Artist(s)"
     for i, playlist in enumerate(sub_playlists):
-        sheet.cell(1, i + 2).value = playlist['name']
+        sheet.cell(1, i + 3).value = playlist['name']
 
     # puts the songs in the first column
     last_row = 0
+    temp_artists = ''
+    mult_artists = False
     for i, song in enumerate(main_playlist['songs']):
         sheet.cell(i + 2, 1).value = song['track']['name']
+        for artist in song['track']['artists']:
+            if mult_artists:
+                temp_artists += ', '+artist['name']
+            else:
+                temp_artists += artist['name']
+            mult_artists = True
+        sheet.cell(i + 2, 2).value = temp_artists
+        temp_artists = ''
+        mult_artists = False
         last_row = i + 2
 
     # saves the excel file's contents
