@@ -18,7 +18,7 @@ def record_data_on_sheet(main_playlist, other_playlists, sheet, index):
         print(f'Searching for {og_track_data["track"]["name"]} in playlists.')
         for col, playlist in enumerate(other_playlists):  # for every playlist in other playlists
             print(f'Checking playlist: {playlist["name"]}')
-            check_playlist_for_track(og_track_data['track'], playlist, sheet, index+row+2, col+3)
+            check_playlist_for_track(og_track_data['track'], playlist, sheet, index+row+2, 49+col+3)
 
 
 def create_sub_playlist_list(playlist):
@@ -68,7 +68,8 @@ def rgb_to_hex(rgb):
 
 def get_data(playlist_name, index, header_already_made):
     # gets the playlists from the user
-    playlists = sp.user_playlists(username)
+    # playlists = sp.user_playlists(username)
+    playlists2 = sp.user_playlists(username, offset=50)
 
     # gets the main playlist that has all the songs and adds the songs into a dictionary
     results = sp.user_playlist(username, playlist_name, fields="tracks,next")
@@ -76,15 +77,16 @@ def get_data(playlist_name, index, header_already_made):
                      'id': sp.user_playlist(username, playlist_name)['id'],
                      'number_of_songs': sp.user_playlist(username, playlist_name)['tracks']['total'],
                      'songs': []}
-
     tracks = results['tracks']
     main_playlist = add_tracks_to_list(tracks, main_playlist, index)
 
     # gets every other playlist and makes dictionaries for them
     sub_playlists = []
-    spotify_sub_playlists = get_sub_playlists(playlists, main_playlist)
-    for playlist in spotify_sub_playlists:
-        sub_playlists.append(create_sub_playlist_list(playlist))
+    all_subs = [playlists2]
+    for playlist_set in all_subs:
+        spotify_sub_playlists = get_sub_playlists(playlist_set, main_playlist)
+        for playlist in spotify_sub_playlists:
+            sub_playlists.append(create_sub_playlist_list(playlist))
 
     # opens the excel file and goes to first sheet
     book = openpyxl.load_workbook('C:/Users/Rubikscrafter/Documents/MS Excel/Dad\'s Playlist Songs Data.xlsx')
@@ -121,7 +123,10 @@ def get_data(playlist_name, index, header_already_made):
     sheet = book.get_sheet_by_name('Songs')
     record_data_on_sheet(main_playlist, sub_playlists, sheet, index)
     book.save('C:/Users/Rubikscrafter/Documents/MS Excel/Dad\'s Playlist Songs Data.xlsx')
+    format_cells()
 
+
+def format_cells():
     # opens sheet with win32 for formatting
     excel = win32com.client.Dispatch("Excel.Application")
     wb = excel.Workbooks.Open('C:/Users/Rubikscrafter/Documents/MS Excel/Dad\'s Playlist Songs Data.xlsx')
@@ -138,7 +143,7 @@ def get_data(playlist_name, index, header_already_made):
     ws.Rows(1).Borders.LineStyle = 1
     ws.Columns.Borders(11).LineStyle = 1
     # ws.Range(ws.Cells(2, 1), ws.Cells(last_row, last_col)).Sort(Key1=ws.Range(ws.Cells(2, 1), ws.Cells(last_row, 1)),
-                                                                # Order1=1, Orientation=2)
+    # Order1=1, Orientation=2)
 
     # saves and quits
     wb.Save()
@@ -167,9 +172,11 @@ def testing():
 
 def main():
     # clear_data()
-    index = 300  # 300
-    header_already_made = True
-    get_data('2Oi22cH7pgo7AKfGUHih52', index, header_already_made)
+    for i in range(600, 3201, 100):
+        index = i  # Should be the row number of the last entered data -1
+        header_already_made = True
+        get_data('2Oi22cH7pgo7AKfGUHih52', index, header_already_made)
+
     # 2Oi22cH7pgo7AKfGUHih52 - J, 07Rrpr2pjNw4SCyqtPIrqj - D, 1WKZ1xpg8BnmmPgTDDCrI4 - Monarchy
     # testing()
 
