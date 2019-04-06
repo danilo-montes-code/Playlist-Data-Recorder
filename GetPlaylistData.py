@@ -12,34 +12,42 @@ def check_playlist_for_track(track, playlist, sheet, row, col):
             break
 
 
-def record_data_on_sheet(main_playlist, other_playlists, sheet):
+def record_data_on_sheet(main_playlist, other_playlists, sheet, index):
     for row, og_track_data in enumerate(main_playlist['songs']):  # for every track
+        print()
+        print(f'Searching for {og_track_data["track"]["name"]} in playlists.')
         for col, playlist in enumerate(other_playlists):  # for every playlist in other playlists
-            check_playlist_for_track(og_track_data['track'], playlist, sheet, row+2, col+3)
+            print(f'Checking playlist: {playlist["name"]}')
+            check_playlist_for_track(og_track_data['track'], playlist, sheet, index+row+2, col+3)
 
 
 def create_sub_playlist_list(playlist):
+    playlist_dict = {'name': playlist['name'],
+                     'id': playlist['id'],
+                     'number_of_songs': playlist['tracks']['total'],
+                     'songs': []}
+
     results = sp.user_playlist(username, playlist['id'], fields="tracks,next")
     tracks = results['tracks']
-    temp_playlist_tracks_list = []
-    temp_playlist_tracks_list = add_tracks_to_list(tracks, temp_playlist_tracks_list)
+    return add_tracks_to_list(tracks, playlist_dict)
 
-    playlist_dict = {'name': playlist['name'],
-                     'number_of_songs': playlist['tracks']['total'], 'songs': []}
 
-    for i in range(0, playlist_dict['number_of_songs']):
-        playlist_dict['songs'].append(temp_playlist_tracks_list[i])
+def add_tracks_to_list(tracks, playlist_dict, index=0):
+    if playlist_dict['name'] != 'All My Songs':
+        for track in tracks['items']:
+            playlist_dict['songs'].append(track)
+        while tracks['next']:
+            tracks = sp.next(tracks)
+            add_tracks_to_list(tracks, playlist_dict)
+
+    if playlist_dict['name'] == 'All My Songs':
+        shift = int(index/100)
+        if tracks['next']:
+            for i in range(0, shift):
+                tracks = sp.next(tracks)
+            for track in tracks['items']:
+                playlist_dict['songs'].append(track)
     return playlist_dict
-
-
-def add_tracks_to_list(tracks, playlist):
-    for track in tracks['items']:
-        playlist.append(track)
-
-    while tracks['next']:
-        tracks = sp.next(tracks)
-        add_tracks_to_list(tracks, playlist)
-    return playlist
 
 
 def get_sub_playlists(playlists, main_playlist):
@@ -58,25 +66,23 @@ def rgb_to_hex(rgb):
     return i_value
 
 
-def get_data():
+def get_data(playlist_name, index, header_already_made):
     # gets the playlists from the user
     playlists = sp.user_playlists(username)
 
-    # gets the main playlist that has all the songs and adds the songs into a list
-    spot_main_playlist = sp.user_playlist(username, '1WKZ1xpg8BnmmPgTDDCrI4')
-    main_playlist = {'name': spot_main_playlist['name'],
-                     'number_of_songs': spot_main_playlist['tracks']['total'], 'songs': []}
-    # 2Oi22cH7pgo7AKfGUHih52 - J, 07Rrpr2pjNw4SCyqtPIrqj - D, 1WKZ1xpg8BnmmPgTDDCrI4 - Monarchy
-    results = sp.user_playlist(username, spot_main_playlist['id'], fields="tracks,next")
-    tracks = results['tracks']
-    all_songs_temp = []
-    all_songs_temp = add_tracks_to_list(tracks, all_songs_temp)
-    for i in range(0, main_playlist['number_of_songs']):
-        main_playlist['songs'].append(all_songs_temp[i])
+    # gets the main playlist that has all the songs and adds the songs into a dictionary
+    results = sp.user_playlist(username, playlist_name, fields="tracks,next")
+    main_playlist = {'name': sp.user_playlist(username, playlist_name)['name'],
+                     'id': sp.user_playlist(username, playlist_name)['id'],
+                     'number_of_songs': sp.user_playlist(username, playlist_name)['tracks']['total'],
+                     'songs': []}
 
-    # gets every other playlist
+    tracks = results['tracks']
+    main_playlist = add_tracks_to_list(tracks, main_playlist, index)
+
+    # gets every other playlist and makes dictionaries for them
     sub_playlists = []
-    spotify_sub_playlists = get_sub_playlists(playlists, spot_main_playlist)
+    spotify_sub_playlists = get_sub_playlists(playlists, main_playlist)
     for playlist in spotify_sub_playlists:
         sub_playlists.append(create_sub_playlist_list(playlist))
 
@@ -84,37 +90,43 @@ def get_data():
     book = openpyxl.load_workbook('C:/Users/Rubikscrafter/Documents/MS Excel/Dad\'s Playlist Songs Data.xlsx')
     sheet = book.get_sheet_by_name('Songs')
 
-    # creates the header row
-    sheet.cell(1, 1).value = main_playlist['name']
-    sheet.cell(1, 2).value = "Artist(s)"
-    for i, playlist in enumerate(sub_playlists):
-        sheet.cell(1, i + 3).value = playlist['name']
+    # only makes the header row if it wasn't already made
+    if not header_already_made:
+        # creates the header row
+        sheet.cell(1, 1).value = main_playlist['name']
+        sheet.cell(1, 2).value = "Artist(s)"
+        for i, playlist in enumerate(sub_playlists):
+            sheet.cell(1, i + 3).value = playlist['name']
 
     # puts the songs in the first column
-    last_row = 0
     temp_artists = ''
-    mult_artists = False
+    multiple_artists = False
     for i, song in enumerate(main_playlist['songs']):
-        sheet.cell(i + 2, 1).value = song['track']['name']
+        sheet.cell(index + i + 2, 1).value = song['track']['name']
         for artist in song['track']['artists']:
-            if mult_artists:
+            if multiple_artists:
                 temp_artists += ', '+artist['name']
             else:
                 temp_artists += artist['name']
-            mult_artists = True
-        sheet.cell(i + 2, 2).value = temp_artists
+            multiple_artists = True
+        sheet.cell(index + i + 2, 2).value = temp_artists
         temp_artists = ''
-        mult_artists = False
-        last_row = i + 2
+        multiple_artists = False
 
     # saves the excel file's contents
     book.save('C:/Users/Rubikscrafter/Documents/MS Excel/Dad\'s Playlist Songs Data.xlsx')
 
-    # sorts the song titles in alphabetical order
+    # puts in the data for all the songs and saves the file
+    book = openpyxl.load_workbook('C:/Users/Rubikscrafter/Documents/MS Excel/Dad\'s Playlist Songs Data.xlsx')
+    sheet = book.get_sheet_by_name('Songs')
+    record_data_on_sheet(main_playlist, sub_playlists, sheet, index)
+    book.save('C:/Users/Rubikscrafter/Documents/MS Excel/Dad\'s Playlist Songs Data.xlsx')
+
+    # opens sheet with win32 for formatting
     excel = win32com.client.Dispatch("Excel.Application")
     wb = excel.Workbooks.Open('C:/Users/Rubikscrafter/Documents/MS Excel/Dad\'s Playlist Songs Data.xlsx')
     ws = wb.Worksheets('Songs')
-    # TODO ws.Range(ws.Cells(2, 1), ws.Cells(last_row, 1)).Sort(Key1=ws.Range('A2'), Order1=1, Orientation=2)
+    ws.Columns.Borders(11).LineStyle = 1
 
     # Auto resizes the columns, centers the text, and bolds and yellows the top row
     ws.Columns.AutoFit()
@@ -125,18 +137,10 @@ def get_data():
     # sets the borders to make the sheet easier to read
     ws.Rows(1).Borders.LineStyle = 1
     ws.Columns.Borders(11).LineStyle = 1
-    wb.Save()
-    excel.Application.Quit()
+    # ws.Range(ws.Cells(2, 1), ws.Cells(last_row, last_col)).Sort(Key1=ws.Range(ws.Cells(2, 1), ws.Cells(last_row, 1)),
+                                                                # Order1=1, Orientation=2)
 
-    # puts in the data for all the songs and saves the file
-    book = openpyxl.load_workbook('C:/Users/Rubikscrafter/Documents/MS Excel/Dad\'s Playlist Songs Data.xlsx')
-    sheet = book.get_sheet_by_name('Songs')
-    record_data_on_sheet(main_playlist, sub_playlists, sheet)
-    book.save('C:/Users/Rubikscrafter/Documents/MS Excel/Dad\'s Playlist Songs Data.xlsx')
-    excel = win32com.client.Dispatch("Excel.Application")
-    wb = excel.Workbooks.Open('C:/Users/Rubikscrafter/Documents/MS Excel/Dad\'s Playlist Songs Data.xlsx')
-    ws = wb.Worksheets('Songs')
-    ws.Columns.Borders(11).LineStyle = 1
+    # saves and quits
     wb.Save()
     excel.Application.Quit()
 
@@ -162,8 +166,11 @@ def testing():
 
 
 def main():
-    clear_data()
-    get_data()
+    # clear_data()
+    index = 300  # 300
+    header_already_made = True
+    get_data('2Oi22cH7pgo7AKfGUHih52', index, header_already_made)
+    # 2Oi22cH7pgo7AKfGUHih52 - J, 07Rrpr2pjNw4SCyqtPIrqj - D, 1WKZ1xpg8BnmmPgTDDCrI4 - Monarchy
     # testing()
 
 
@@ -174,5 +181,5 @@ if __name__ == '__main__':
     sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
 
     # the username of the user, taken from spotify uri
-    username = '22kl7y3a4dhdzvca75vnxxmky'  # 22kl7y3a4dhdzvca75vnxxmky
+    username = 'revjose49'  # 22kl7y3a4dhdzvca75vnxxmky - D, revjose49 - J
     main()
