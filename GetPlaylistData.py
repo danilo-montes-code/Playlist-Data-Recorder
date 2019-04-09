@@ -186,7 +186,9 @@ if __name__ == '__main__':
     client_credentials_manager = SpotifyClientCredentials(client_id='4cd9cb8ecb73460e83343978be07106a',
                                                           client_secret='1a88d95267464a039b4a11a478982e16')
     sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
-
+    spotify:user:22kl7y3a4dhdzvca75vnxxmky
     # the username of the user, taken from spotify uri
-    username = 'revjose49'  # 22kl7y3a4dhdzvca75vnxxmky - D, revjose49 - J
+    user = input('What is your spotify api?')
+    colon_index = user[8:].find(':')
+    username = user[colon_index+1:]
     main()
