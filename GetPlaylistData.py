@@ -4,6 +4,16 @@ from spotipy.oauth2 import SpotifyClientCredentials
 import win32com.client
 
 
+'''
+Checks a given playlist for a track.
+
+Args:
+    track: id of the track to search for
+    playlist: playlist dictionary that will be searched for the track
+    sheet: the excel sheet to write data for finding a song onto
+    row: row that the song is in on the excel sheet
+    col: column that the playlist is in on the excel sheet
+'''
 def check_playlist_for_track(track, playlist, sheet, row, col):
     for playlist_song in playlist['songs']:
         if playlist_song['track']['id'] == track['id']:
@@ -12,6 +22,15 @@ def check_playlist_for_track(track, playlist, sheet, row, col):
             break
 
 
+'''
+Loops to write the data on the excel sheet
+
+Args:
+    main_playlist: dictionary of the playlist that the songs are being are taken from
+    other_playlists: list of dictionaries of playlists that are being searched for the songs
+    sheet: excel sheet to write the data on
+    index: pushes the row counter forward as the song number changes, as each search is done in sets of 100
+'''
 def record_data_on_sheet(main_playlist, other_playlists, sheet, index):
     for row, og_track_data in enumerate(main_playlist['songs']):  # for every track
         print()
@@ -21,6 +40,12 @@ def record_data_on_sheet(main_playlist, other_playlists, sheet, index):
             check_playlist_for_track(og_track_data['track'], playlist, sheet, index+row+2, 49+col+3)
 
 
+'''
+Appends to the list containing the dictionaries of all the playlists besides the main one
+
+Args:
+    playlist: the playlist to be appended to the list
+'''
 def create_sub_playlist_list(playlist):
     playlist_dict = {'name': playlist['name'],
                      'id': playlist['id'],
@@ -32,6 +57,14 @@ def create_sub_playlist_list(playlist):
     return add_tracks_to_list(tracks, playlist_dict)
 
 
+'''
+Adds tracks to the dictionary of the playlist that is passed in
+
+Args:
+    tracks: the tracks to be added to the dictionary
+    playlist_dict: the playlist dictionary to add the songs to
+    index: for the main playlist, shifts the songs down to the correct set of 100 to store
+'''
 def add_tracks_to_list(tracks, playlist_dict, index=0):
     if playlist_dict['name'] != 'All My Songs':
         for track in tracks['items']:
@@ -50,6 +83,9 @@ def add_tracks_to_list(tracks, playlist_dict, index=0):
     return playlist_dict
 
 
+'''
+Gets the other public user playlists that are not the main playlist
+'''
 def get_sub_playlists(playlists, main_playlist):
     sub_playlists = []
     for playlist in playlists['items']:
