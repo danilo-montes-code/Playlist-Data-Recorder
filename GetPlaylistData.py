@@ -45,6 +45,9 @@ Appends to the list containing the dictionaries of all the playlists besides the
 
 Args:
     playlist: the playlist to be appended to the list
+    
+Return:
+    playlist dictionary after adding its tracks to said dictionary
 '''
 def create_sub_playlist_list(playlist):
     playlist_dict = {'name': playlist['name'],
@@ -64,6 +67,9 @@ Args:
     tracks: the tracks to be added to the dictionary
     playlist_dict: the playlist dictionary to add the songs to
     index: for the main playlist, shifts the songs down to the correct set of 100 to store
+    
+Return:
+    playlist_dict: the created playlist dictionary
 '''
 def add_tracks_to_list(tracks, playlist_dict, index=0):
     if playlist_dict['name'] != 'All My Songs':
@@ -85,6 +91,13 @@ def add_tracks_to_list(tracks, playlist_dict, index=0):
 
 '''
 Gets the other public user playlists that are not the main playlist
+
+Args:
+    playlists: all of the user's public playlists
+    main_playlist: the dictionary of the main playlist
+  
+Return:
+    sub_playlists: a list of all the user's public playlists that are not the main playlist
 '''
 def get_sub_playlists(playlists, main_playlist):
     sub_playlists = []
@@ -94,14 +107,29 @@ def get_sub_playlists(playlists, main_playlist):
     return sub_playlists
 
 
+'''
+Converts a passed in rgb tuple to hexadecimal, useful for changing the background of the top row on the excel sheet, making the column headers more distinguishable from other data
+
+Args:
+    rgb: a tuple a rgb values corresponding to a color
+    
+Return:
+    the hexadecmial value of the passed in rgb value
+'''
 def rgb_to_hex(rgb):
     bgr = (rgb[2], rgb[1], rgb[0])
     str_value = '%02x%02x%02x' % bgr
-    # print(strValue)
-    i_value = int(str_value, 16)
-    return i_value
+    return int(str_value, 16)
 
 
+'''
+Gets the data and writes it to the excel sheet; essentially the main method
+
+Args:
+    playlist_name: id of the main playlist
+    index: buffer number to shift forward the obtained sets of 100 songs from the main playlist
+    header_already_made: a boolean variable that is true if the header row on the excel sheet was already made and false otherwise
+'''
 def get_data(playlist_name, index, header_already_made):
     # gets the playlists from the user
     # playlists = sp.user_playlists(username)
@@ -186,35 +214,13 @@ def format_cells():
     excel.Application.Quit()
 
 
-def clear_data():
-    excel = win32com.client.Dispatch("Excel.Application")
-    wb = excel.Workbooks.Open('C:/Users/Rubikscrafter/Documents/MS Excel/Dad\'s Playlist Songs Data.xlsx')
-    ws = wb.Worksheets('Songs')
-    ws.Rows.Clear()
-    ws.Columns.Clear()
-    ws.Rows.Borders(12).LineStyle = -4142
-    ws.Columns.Borders(11).LineStyle = -4142
-    ws.Columns.ColumnWidth = 10
-
-    wb.Save()
-    excel.Application.Quit()
-
-
-def testing():
-    playlists = sp.user_playlists(username)
-    for thing in playlists['items']:
-        print(thing['name'])
-
-
 def main():
-    # clear_data()
     for i in range(600, 3201, 100):
         index = i  # Should be the row number of the last entered data -1
         header_already_made = True
         get_data('2Oi22cH7pgo7AKfGUHih52', index, header_already_made)
 
     # 2Oi22cH7pgo7AKfGUHih52 - J, 07Rrpr2pjNw4SCyqtPIrqj - D, 1WKZ1xpg8BnmmPgTDDCrI4 - Monarchy
-    # testing()
 
 
 if __name__ == '__main__':
