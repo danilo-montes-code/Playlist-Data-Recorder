@@ -215,6 +215,8 @@ def format_cells():
 
 
 def main():
+    print              
+                  
     for i in range(600, 3201, 100):
         index = i  # Should be the row number of the last entered data -1
         header_already_made = True
@@ -228,9 +230,14 @@ if __name__ == '__main__':
     client_credentials_manager = SpotifyClientCredentials(client_id='4cd9cb8ecb73460e83343978be07106a',
                                                           client_secret='1a88d95267464a039b4a11a478982e16')
     sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
-    spotify:user:22kl7y3a4dhdzvca75vnxxmky
-    # the username of the user, taken from spotify uri
-    user = input('What is your spotify api?')
-    colon_index = user[8:].find(':')
-    username = user[colon_index+1:]
+    
+    # sets up the variables that will be used throughout the script
+    username = ''
+    main_playlist = {}
+    sub_playlists = []
+    sheet = None
+    
+    # asks the user for their username (hopefully temporary), taken from spotify uri
+    user = input('What is your spotify api? (right click on your profile name when viewing your profile and click the last option)')
+    username = user[13:]
     main()
