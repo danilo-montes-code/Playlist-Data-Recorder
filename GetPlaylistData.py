@@ -263,8 +263,8 @@ def main():
 
 if __name__ == '__main__':
     # sets up the credentials for the spotipy object
-    client_credentials_manager = SpotifyClientCredentials(client_id='4cd9cb8ecb73460e83343978be07106a',
-                                                          client_secret='1a88d95267464a039b4a11a478982e16')
+    client_credentials_manager = SpotifyClientCredentials(client_id='id',
+                                                          client_secret='secret')
     sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
 
     # sets up the variables that will be used throughout the script
